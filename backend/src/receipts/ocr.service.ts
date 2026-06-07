@@ -20,7 +20,7 @@ export class OcrService {
           contents: [{
             parts: [
               {
-                text: "Analyze this Polish receipt image. Extract the structured data. Respond ONLY with a valid JSON object. Do not wrap in markdown code blocks. Here is the JSON schema: { store: string, nip: string, date: string (YYYY-MM-DD), items: [{ name: string (clean, recognizable product name without price noise), quantity: number, unitPrice: number, discount: number (positive float), finalPrice: number }], total: number, totalDiscounts: number }."
+                text: "Analyze this Polish receipt image. Extract the structured data. Respond with a valid JSON object matching the schema. DO NOT include transaction/payment details, card details (Visa, Mastercard, etc.), container refunds (such as 'BON - zwrot opak'), discount totals, or VAT summaries as product items. Extract ONLY actual purchased product items. Here is the JSON schema: { store: string, nip: string, date: string (YYYY-MM-DD), items: [{ name: string (clean, recognizable product name without price noise), quantity: number, unitPrice: number, discount: number (positive float), finalPrice: number }], total: number, totalDiscounts: number }."
               },
               {
                 inlineData: {
@@ -29,21 +29,25 @@ export class OcrService {
                 }
               }
             ]
-          }]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
         };
 
-        const response = await axios.post(url, payload, { timeout: 15000 });
+        // Increased timeout to 35 seconds to avoid timeout failures on slow networks or large images
+        const response = await axios.post(url, payload, { timeout: 35000 });
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
         
         if (text) {
-          // Clean markdown backticks if any
           const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
           const parsed = JSON.parse(cleanJson);
           this.logger.log('Successfully parsed receipt using Gemini API');
           return parsed;
         }
       } catch (err: any) {
-        this.logger.error(`Gemini API OCR failed: ${err.message}. Falling back to Tesseract.`);
+        const details = err.response?.data ? JSON.stringify(err.response.data) : (err.stack || err.message);
+        this.logger.error(`Gemini API OCR failed. Status: ${err.response?.status}. Details: ${details}`);
       }
     }
 
@@ -110,10 +114,11 @@ export class OcrService {
 
       const isDetail = /^\d+(\.\d+)?\s*x/i.test(line) || line.includes(' x');
       const isDiscount = /^OPUST/i.test(line) || /^RABAT/i.test(line);
+      const isExcludedLine = /SUMA|SPRZED|PTU|KARTA|KART|VISA|JISA|MAESTRO|MASTERCARD|CARD|BON|ZWROT|OPAK|RESZTA|CASH|GOTÓW|GOTOW|PLN|KASA|KASJER|TRANSAKC|DZIĘK|ZAPRASZ|STAWKA|OPODATK/i.test(line);
 
       // 3. Match items: Text followed by space and a letter category (e.g. "Maslo Ekstra  C")
       const itemHeaderMatch = line.match(/^(.+)\s+([A-D])$/);
-      if (itemHeaderMatch && !isDetail && !isDiscount && !/SUMA|SPRZED|PTU|KARTA|BON|PLN/i.test(line)) {
+      if (itemHeaderMatch && !isDetail && !isDiscount && !isExcludedLine) {
         currentItem = {
           name: itemHeaderMatch[1].trim(),
           taxCategory: itemHeaderMatch[2],
@@ -176,7 +181,9 @@ export class OcrService {
     // Grab lines containing prices
     lines.forEach((line, idx) => {
       const priceMatch = line.match(/(\d+[\s,.]\d{2})\s*(?:PLN|zł|[A-D])/i);
-      if (priceMatch && !/SUMA|RAZEM|NIP|PTU|KARTA/i.test(line)) {
+      const isExcludedLine = /SUMA|SPRZED|PTU|KARTA|KART|VISA|JISA|MAESTRO|MASTERCARD|CARD|BON|ZWROT|OPAK|RESZTA|CASH|GOTÓW|GOTOW|PLN|KASA|KASJER|TRANSAKC|DZIĘK|ZAPRASZ|STAWKA|OPODATK/i.test(line);
+      
+      if (priceMatch && !isExcludedLine) {
         const price = parseFloat(priceMatch[1].replace(' ', '').replace(',', '.'));
         const name = line.replace(priceMatch[0], '').trim() || `Pozycja ${idx + 1}`;
         if (name.length > 2) {
