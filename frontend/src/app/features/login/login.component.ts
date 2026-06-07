@@ -18,7 +18,9 @@ import { TranslationService } from '../../services/translation.service';
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
           </svg>
         </div>
-        <h1>{{ ts.t('login.title') }}</h1>
+        <h1>{{ isRegisterMode() 
+          ? (ts.currentLang() === 'pl' ? 'Zarejestruj się' : 'Регистрация') 
+          : ts.t('login.title') }}</h1>
         <p class="subtitle">{{ ts.t('login.subtitle') }}</p>
       </div>
 
@@ -26,6 +28,18 @@ import { TranslationService } from '../../services/translation.service';
         <form (ngSubmit)="onSubmit()">
           <div *ngIf="errorMsg()" class="error-alert">
             {{ errorMsg() }}
+          </div>
+
+          <div class="form-group" *ngIf="isRegisterMode()">
+            <label for="name">{{ ts.currentLang() === 'pl' ? 'Imię' : 'Имя' }}</label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              [(ngModel)]="name" 
+              placeholder="Alex" 
+              required
+            />
           </div>
 
           <div class="form-group">
@@ -53,10 +67,22 @@ import { TranslationService } from '../../services/translation.service';
           </div>
 
           <button type="submit" class="submit-btn" [disabled]="isLoading()">
-            <span *ngIf="!isLoading()">{{ ts.t('login.button') }}</span>
-            <span *ngIf="isLoading()">{{ ts.currentLang() === 'pl' ? 'Logowanie...' : 'Вход...' }}</span>
+            <span *ngIf="!isLoading()">
+              {{ isRegisterMode() 
+                ? (ts.currentLang() === 'pl' ? 'Zarejestruj się' : 'Создать аккаунт') 
+                : ts.t('login.button') }}
+            </span>
+            <span *ngIf="isLoading()">{{ ts.currentLang() === 'pl' ? 'Przetwarzanie...' : 'Секунду...' }}</span>
           </button>
         </form>
+
+        <div class="toggle-mode-container">
+          <button type="button" class="link-btn" (click)="toggleMode()">
+            {{ isRegisterMode()
+              ? (ts.currentLang() === 'pl' ? 'Masz już konto? Zaloguj się' : 'Уже есть аккаунт? Войти')
+              : (ts.currentLang() === 'pl' ? 'Nie masz konta? Zarejestruj się' : 'Нет аккаунта? Зарегистрироваться') }}
+          </button>
+        </div>
 
         <div class="divider">
           <span>{{ ts.currentLang() === 'pl' ? 'lub' : 'или' }}</span>
@@ -179,6 +205,23 @@ import { TranslationService } from '../../services/translation.service';
     .submit-btn:active {
       transform: scale(0.98);
       box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+    .toggle-mode-container {
+      text-align: center;
+      margin-top: 14px;
+    }
+    .link-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent-color);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 8px;
+      transition: opacity 0.2s ease;
+    }
+    .link-btn:active {
+      opacity: 0.7;
     }
     .divider {
       display: flex;

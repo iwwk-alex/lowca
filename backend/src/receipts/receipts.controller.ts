@@ -8,14 +8,22 @@ import {
   Param,
   Request,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ReceiptsService } from './receipts.service';
+import { OcrService } from './ocr.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('receipts')
 @UseGuards(JwtAuthGuard)
 export class ReceiptsController {
-  constructor(private readonly receiptsService: ReceiptsService) {}
+  constructor(
+    private readonly receiptsService: ReceiptsService,
+    private readonly ocrService: OcrService,
+  ) {}
 
   /** GET /receipts — all receipts for logged-in user */
   @Get()
@@ -39,6 +47,20 @@ export class ReceiptsController {
   @Post()
   create(@Request() req: any, @Body() body: any) {
     return this.receiptsService.create(req.user.sub, body);
+  }
+
+  /** POST /receipts/scan — OCR scan receipt file */
+  @Post('scan')
+  @UseInterceptors(FileInterceptor('file'))
+  async scanReceipt(
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No receipt image file uploaded');
+    }
+    const recognizedText = await this.ocrService.recognizeText(file.buffer);
+    const parsedData = this.ocrService.parseReceiptText(recognizedText);
+    return parsedData;
   }
 
   /** PUT /receipts/:id — update receipt */

@@ -47,5 +47,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikacja Łowca potrzebuje dostępu do aparatu, aby móc zeskanować Twój paragon i zanalizować zniżki.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikacja Łowca potrzebuje dostępu do galerii zdjęć, aby wybrać zdjęcie paragonu do zeskanowania.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Aplikacja Łowca potrzebuje możliwości zapisu zdjęć z aparatu do galerii.</string>
 </dict>
 </plist>
