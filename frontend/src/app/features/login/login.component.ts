@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
 
@@ -231,19 +232,52 @@ import { TranslationService } from '../../services/translation.service';
 })
 export class LoginComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
   public ts = inject(TranslationService);
 
   email = '';
   password = '';
+  name = '';
+  isRegisterMode = signal(false);
+  isLoading = signal(false);
+  errorMsg = signal('');
 
   onSubmit() {
-    // Basic local validation
-    if (this.email.trim() && this.password.trim()) {
-      this.authService.login(this.email, this.password);
-    }
+    if (!this.email.trim() || !this.password.trim()) return;
+    this.isLoading.set(true);
+    this.errorMsg.set('');
+
+    const call = this.isRegisterMode()
+      ? this.authService.register(this.email, this.password, this.name)
+      : this.authService.login(this.email, this.password);
+
+    call.subscribe({
+      next: () => this.router.navigate(['/home']),
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMsg.set(err?.error?.message || 'Ошибка соединения с сервером');
+      }
+    });
+  }
+
+  toggleMode() {
+    this.isRegisterMode.update(v => !v);
+    this.errorMsg.set('');
   }
 
   loginAsGuest() {
-    this.authService.login();
+    // Guest mode: use demo credentials
+    this.email = 'guest@lowca.pl';
+    this.password = 'guest123456';
+    this.authService.register('guest@lowca.pl', 'guest123456', 'Гость').subscribe({
+      next: () => this.router.navigate(['/home']),
+      error: () => {
+        // Already registered, try login
+        this.authService.login('guest@lowca.pl', 'guest123456').subscribe({
+          next: () => this.router.navigate(['/home']),
+          error: (err) => this.errorMsg.set(err?.error?.message || 'Ошибка')
+        });
+      }
+    });
   }
 }
