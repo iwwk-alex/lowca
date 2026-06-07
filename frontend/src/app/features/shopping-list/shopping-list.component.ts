@@ -1168,8 +1168,8 @@ export class ShoppingListComponent {
   async startParsing() {
     try {
       const image = await Camera.getPhoto({
-        quality: 50, // lower quality = smaller file size = faster upload & processing
-        width: 1000, // limit size to 1000px width for fast OCR and upload
+        quality: 85, // higher quality to preserve fine receipt text details
+        width: 1600, // wider resolution for high-accuracy OCR text recognition
         allowEditing: true, // show native crop tool so user can frame/crop the receipt
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera
