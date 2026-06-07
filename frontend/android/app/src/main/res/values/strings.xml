@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Poland Discounts</string>
+    <string name="title_activity_main">Poland Discounts</string>
+    <string name="package_name">com.discounts.poland</string>
+    <string name="custom_url_scheme">com.discounts.poland</string>
+</resources>

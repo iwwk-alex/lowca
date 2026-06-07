@@ -1,0 +1,290 @@
+[
+  {
+    "id": "biedronka-0",
+    "store": "biedronka",
+    "name": "Nożyczki joie",
+    "price": 14.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//64dbcb12-5f25-4be4-a500-5219c6e38bee.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-1",
+    "store": "biedronka",
+    "name": "Klapki męskie Hootomi",
+    "price": 29.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//fe18fa1d-8b68-435a-bb43-bc3b8890ce4d.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-2",
+    "store": "biedronka",
+    "name": "Klapki damskie Hootomi",
+    "price": 29.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//2ccce4b4-8a13-4bc8-9080-1ce62e4a9112.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-3",
+    "store": "biedronka",
+    "name": "Szczotka samoczyszcząca ACTIV PET",
+    "price": 9.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//6273c7e5-51d0-461b-acf6-33541e5c4bd5.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-4",
+    "store": "biedronka",
+    "name": "Legowisko ACTIV PET",
+    "price": 49.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//9b7b9f0f-cf5d-4924-bf83-cb5e1dfeb3ad.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-5",
+    "store": "biedronka",
+    "name": "Siekacz do ciasta kruchego SMUKEE",
+    "price": 7.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//e4fc4b17-7901-4013-97b7-a2850c075f99.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-6",
+    "store": "biedronka",
+    "name": "Szczypce SMUKEE",
+    "price": 7.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//84060948-fd23-4b5a-bbc8-5e7250f37843.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-7",
+    "store": "biedronka",
+    "name": "Nóż do ciasta SMUKEE",
+    "price": 7.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//b929bf6e-a121-4a7d-90dd-2dff6b00f128.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-8",
+    "store": "biedronka",
+    "name": "Praska do czosnku SMUKEE",
+    "price": 7.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//32f168b4-a2c1-48c6-bd1a-c12b9fc1b257.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-9",
+    "store": "biedronka",
+    "name": "Miska z durszlakiem mtm",
+    "price": 17.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//7ccde0d3-de23-4f81-8621-3d8e002f0315.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-10",
+    "store": "biedronka",
+    "name": "Organizer do samochodu GT max",
+    "price": 59.9,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//da457cc5-6fc7-4b70-ac62-0075c31bc278.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "biedronka-11",
+    "store": "biedronka",
+    "name": "Wino Kazbek Peak",
+    "price": 19.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//d77e59bb-ef34-4139-a0bc-1bea57d23223.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-0",
+    "store": "lidl",
+    "name": "Wódka Żołądkowa Gorzka Tradycyjna",
+    "price": 6.89,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//aadec983-fce5-4285-98b5-9b6f21112076.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-1",
+    "store": "lidl",
+    "name": "Wódka Dzika Kaczka",
+    "price": 28.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//48148fe5-2467-4b23-b96d-9754c46b4c90.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-2",
+    "store": "lidl",
+    "name": "Rum Havana Club",
+    "price": 53.89,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//6342326d-e912-4e94-907b-519ba88d9fd3.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-3",
+    "store": "lidl",
+    "name": "Brandy Metaxa 12*",
+    "price": 139.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//81d762c0-6de2-4f64-a688-57582ae63490.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-4",
+    "store": "lidl",
+    "name": "Szampan Comte de Senneval Brut",
+    "price": 89.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//14183cec-6a2f-47f6-88d7-d9b944c13508.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-5",
+    "store": "lidl",
+    "name": "Szorty damskie z lnem Esmara",
+    "price": 27.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//2b18e5d1-f5ae-4a07-bedb-eb06161e2fbf.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-6",
+    "store": "lidl",
+    "name": "Akumulatorowa szlifierka kątowa 20V PARKSIDE",
+    "price": 119,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//ca47685b-48f3-4d91-b370-caffd99a92c0.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-7",
+    "store": "lidl",
+    "name": "Wózek transportowy składany PARKSIDE",
+    "price": 119,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//2f7c8fbb-e620-4609-92d7-84b21816b173.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-8",
+    "store": "lidl",
+    "name": "Linka PARKSIDE",
+    "price": 7.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//919ad202-ae77-4c0f-9a75-d98f793f4f08.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-9",
+    "store": "lidl",
+    "name": "Piwo Żubr",
+    "price": 4.39,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//849cb0ed-4250-4bfc-a6d6-caf631614ec7.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-10",
+    "store": "lidl",
+    "name": "Kiełbasa wiejska Pikok Od Krajana",
+    "price": 13.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//b5edd890-e568-445b-898f-833d0f402607.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "lidl-11",
+    "store": "lidl",
+    "name": "Piwo Żubr",
+    "price": 4.39,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//1f73fadc-2fbb-41b2-9fd7-22ad06929336.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-0",
+    "store": "kaufland",
+    "name": "Jednostka kontrolna sprężonego powietrza PARKSIDE",
+    "price": 79.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//75099a8c-e51c-4d46-a167-310b8310f80a.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-1",
+    "store": "kaufland",
+    "name": "Sekator Fiskars",
+    "price": 34.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//2778d7a0-aee6-4d32-b631-eac8ac82ca5b.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-2",
+    "store": "kaufland",
+    "name": "Wino GIRAFFINO",
+    "price": 15.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//bdbe5088-1561-460f-9075-e0f89778d441.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-3",
+    "store": "kaufland",
+    "name": "Wino GAMZIRI Pirosmani",
+    "price": 19.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//a5ef28e8-e4f7-428b-9cb2-8d79a61c9d6d.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-4",
+    "store": "kaufland",
+    "name": "Wino MOSTRA",
+    "price": 16.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//46cf1bb7-e8d1-40bf-a4ad-1d9bcfabdc25.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-5",
+    "store": "kaufland",
+    "name": "Wino Senorio de Mareste",
+    "price": 15.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//db409853-4e67-42ab-b4fc-5b29a55593b9.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-6",
+    "store": "kaufland",
+    "name": "Wino Outback Hill Chardonnay",
+    "price": 12.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//b59eb411-aeea-4b4b-8a8f-e9accbd3ba1d.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-7",
+    "store": "kaufland",
+    "name": "Krewetki białe gotowane Superfish",
+    "price": 29.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//11d3cd29-099e-4863-8bdd-9e19ccd2736e.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-8",
+    "store": "kaufland",
+    "name": "Dżem truskawkowy K-Classic",
+    "price": 5,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//4a487b0c-ccfc-4bfe-8723-32797a622846.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-9",
+    "store": "kaufland",
+    "name": "Szynka jak u dziadka Sokołów",
+    "price": 3.49,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//a5d5a765-03d2-457f-896b-d77cde0e84bd.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-10",
+    "store": "kaufland",
+    "name": "Bułka tarta wrocławska MAMUT",
+    "price": 3.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//c8eac4c5-12c1-44e4-9614-611b16931a99.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  },
+  {
+    "id": "kaufland-11",
+    "store": "kaufland",
+    "name": "Danie tatarskie Sokołów",
+    "price": 8.99,
+    "imgUrl": "https://imgproxy.blix.pl/product_occurrence//df4e1931-5f1f-4cb6-ac12-9fa53d792b5c.jpg?bucket=400",
+    "promoText": "Promocja gazetkowa"
+  }
+]

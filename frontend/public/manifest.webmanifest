@@ -1,0 +1,17 @@
+{
+  "name": "Polskie Promocje - Biedronka, Lidl, Kaufland",
+  "short_name": "Promocje PL",
+  "description": "Porównanie cen i promocji w polskich supermarketach (Biedronka, Lidl, Kaufland) ze skanerem paragonów, listą zakupów i analizą zapasów.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#38bdf8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

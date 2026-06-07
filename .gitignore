@@ -1,0 +1,33 @@
+# Dependency directories
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+**/.angular/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Capacitor specific ignored files
+frontend/android/app/build/
+frontend/ios/App/build/
+frontend/ios/App/Pods/
+frontend/ios/App/Podfile.lock
+frontend/android/.gradle/
+frontend/android/local.properties
