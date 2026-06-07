@@ -9,10 +9,9 @@ import { AuthService } from './services/auth.service';
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="phone-frame">
-      <!-- Phone Mock Status Bar -->
+      <!-- Top Action Bar -->
       <div class="status-bar">
         <div class="status-left">
-          <span class="time">15:14</span>
           <button class="lang-toggle-btn" (click)="ts.toggleLanguage()">
             {{ ts.currentLang().toUpperCase() }}
           </button>
@@ -23,16 +22,6 @@ import { AuthService } from './services/auth.service';
               </svg>
             </button>
           }
-        </div>
-        <div class="icons">
-          <!-- Signal Icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 22h20V2z"/>
-          </svg>
-          <!-- Battery Icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m2 3h2v8h-2z"/>
-          </svg>
         </div>
       </div>
 

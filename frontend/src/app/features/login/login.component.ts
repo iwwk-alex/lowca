@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -24,6 +24,10 @@ import { TranslationService } from '../../services/translation.service';
 
       <div class="glass-card login-form-card">
         <form (ngSubmit)="onSubmit()">
+          <div *ngIf="errorMsg()" class="error-alert">
+            {{ errorMsg() }}
+          </div>
+
           <div class="form-group">
             <label for="email">{{ ts.t('login.email') }}</label>
             <input 
@@ -48,8 +52,9 @@ import { TranslationService } from '../../services/translation.service';
             />
           </div>
 
-          <button type="submit" class="submit-btn">
-            {{ ts.t('login.button') }}
+          <button type="submit" class="submit-btn" [disabled]="isLoading()">
+            <span *ngIf="!isLoading()">{{ ts.t('login.button') }}</span>
+            <span *ngIf="isLoading()">{{ ts.currentLang() === 'pl' ? 'Logowanie...' : 'Вход...' }}</span>
           </button>
         </form>
 
@@ -57,7 +62,7 @@ import { TranslationService } from '../../services/translation.service';
           <span>{{ ts.currentLang() === 'pl' ? 'lub' : 'или' }}</span>
         </div>
 
-        <button type="button" class="guest-btn" (click)="loginAsGuest()">
+        <button type="button" class="guest-btn" (click)="loginAsGuest()" [disabled]="isLoading()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
@@ -68,6 +73,17 @@ import { TranslationService } from '../../services/translation.service';
     </div>
   `,
   styles: [`
+    .error-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
     .login-container {
       display: flex;
       flex-direction: column;
@@ -227,8 +243,7 @@ import { TranslationService } from '../../services/translation.service';
         transform: translateY(0);
       }
     }
-  `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  `]
 })
 export class LoginComponent {
   private authService = inject(AuthService);
