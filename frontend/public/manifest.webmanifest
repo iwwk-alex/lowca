@@ -1,6 +1,6 @@
 {
-  "name": "Polskie Promocje - Biedronka, Lidl, Kaufland",
-  "short_name": "Promocje PL",
+  "name": "Łowca — Promocje & Paragony",
+  "short_name": "Łowca",
   "description": "Porównanie cen i promocji w polskich supermarketach (Biedronka, Lidl, Kaufland) ze skanerem paragonów, listą zakupów i analizą zapasów.",
   "start_url": "/",
   "display": "standalone",
