@@ -347,6 +347,26 @@ interface PantryItem {
         </div>
       </div>
     }
+
+    <!-- TOAST NOTIFICATION -->
+    @if (toast(); as t) {
+      <div class="toast-notification" [class]="t.type">
+        <div class="toast-icon">
+          @if (t.type === 'success') {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          }
+        </div>
+        <div class="toast-message">{{ t.message }}</div>
+      </div>
+    }
   `,
   styles: [`
     .list-header-row {
@@ -978,6 +998,44 @@ interface PantryItem {
       font-size: 13px;
       cursor: pointer;
     }
+    .toast-notification {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-radius: 16px;
+      z-index: 10000;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      animation: toast-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .toast-notification.success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+    .toast-notification.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+    @keyframes toast-slide-in {
+      0% {
+        transform: translate(-50%, 40px);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -986,6 +1044,14 @@ export class ShoppingListComponent {
   private http = inject(HttpClient);
   listItems = signal<ListProduct[]>([]);
   activeTab = signal<'list' | 'pantry'>('list');
+  toast = signal<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    this.toast.set({ message, type });
+    setTimeout(() => {
+      this.toast.set(null);
+    }, 4000);
+  }
 
   // Pantry items state
   pantryItems = signal<PantryItem[]>([]);
@@ -1056,17 +1122,22 @@ export class ShoppingListComponent {
   async openScanner() {
     this.scannerOpen.set(true);
     this.scannerStep.set('camera');
+    await this.startParsing();
   }
 
   closeScanner() {
+    if (this.scannerStep() === 'parsing') {
+      return; // Prevent closing while parsing/uploading
+    }
     this.scannerOpen.set(false);
   }
 
   async startParsing() {
     try {
       const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
+        quality: 50, // lower quality = smaller file size = faster upload & processing
+        width: 1000, // limit size to 1000px width for fast OCR and upload
+        allowEditing: true, // show native crop tool so user can frame/crop the receipt
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera
       });
@@ -1103,30 +1174,40 @@ export class ShoppingListComponent {
 
           this.scannedReceiptItems.set(mappedItems);
           this.scannerStep.set('review');
+          this.showToast('Чек успешно отсканирован и распознан!', 'success');
         },
         error: (err) => {
           console.error('OCR API Upload failed:', err);
-          alert('Не удалось обработать изображение. Пожалуйста, попробуйте еще раз или проверьте соединение.');
+          this.showToast('Не удалось загрузить или обработать чек', 'error');
           this.scannerStep.set('camera');
         }
       });
 
     } catch (err: any) {
-      console.warn('Camera capture canceled or failed:', err.message);
+      console.warn('Camera capture canceled or failed:', err.message || err);
+      const errMsg = err.message || JSON.stringify(err) || 'Unknown error';
+      
+      // If user cancelled, just close scanner
+      if (errMsg.includes('cancelled') || errMsg.includes('canceled') || errMsg.includes('User cancelled')) {
+        this.closeScanner();
+        return;
+      }
+      
+      this.showToast('Ошибка запуска камеры: ' + errMsg, 'error');
+
       // Fallback: If camera is not available (e.g. running on simulator without camera or web browser), 
       // simulate OCR parsing so user isn't stuck.
-      if (err.message !== 'User cancelled photos app') {
-        this.scannerStep.set('parsing');
-        setTimeout(() => {
-          this.scannedReceiptItems.set([
-            { name: 'PoduszkiNugVit350g', quantity: 1, unitPrice: 7.49, discount: 0, finalPrice: 7.49 },
-            { name: 'TortillaPszenna306g', quantity: 3, unitPrice: 3.99, discount: 3.99, finalPrice: 7.98 },
-            { name: 'Chleb Slowia 380g', quantity: 1, unitPrice: 4.29, discount: 0, finalPrice: 4.29 },
-            { name: 'Jaja W wyb L 10szt', quantity: 2, unitPrice: 13.99, discount: 4.23, finalPrice: 23.75 }
-          ]);
-          this.scannerStep.set('review');
-        }, 1500);
-      }
+      this.scannerStep.set('parsing');
+      setTimeout(() => {
+        this.scannedReceiptItems.set([
+          { name: 'PoduszkiNugVit350g', quantity: 1, unitPrice: 7.49, discount: 0, finalPrice: 7.49 },
+          { name: 'TortillaPszenna306g', quantity: 3, unitPrice: 3.99, discount: 3.99, finalPrice: 7.98 },
+          { name: 'Chleb Slowia 380g', quantity: 1, unitPrice: 4.29, discount: 0, finalPrice: 4.29 },
+          { name: 'Jaja W wyb L 10szt', quantity: 2, unitPrice: 13.99, discount: 4.23, finalPrice: 23.75 }
+        ]);
+        this.scannerStep.set('review');
+        this.showToast('Чек отсканирован в демо-режиме', 'success');
+      }, 1500);
     }
   }
 
@@ -1157,7 +1238,7 @@ export class ShoppingListComponent {
     this.savePantry();
 
     this.closeScanner();
-    alert(this.ts.t('scanner.success_alert'));
+    this.showToast('Продукты из чека успешно добавлены!', 'success');
   }
 
   formatItemName(name: string): string {
