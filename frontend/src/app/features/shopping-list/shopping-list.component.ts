@@ -2,6 +2,7 @@ import { Component, signal, computed, ChangeDetectionStrategy, inject } from '@a
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { DocumentScanner, ResponseType } from '@capgo/capacitor-document-scanner';
 import { TranslationService } from '../../services/translation.service';
 import { API_CONFIG } from '../../core/config/api.config';
 
@@ -1167,22 +1168,36 @@ export class ShoppingListComponent {
 
   async startParsing() {
     try {
-      const image = await Camera.getPhoto({
-        quality: 85, // higher quality to preserve fine receipt text details
-        width: 1600, // wider resolution for high-accuracy OCR text recognition
-        allowEditing: true, // show native crop tool so user can frame/crop the receipt
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera
-      });
+      let base64String = '';
+      try {
+        const result = await DocumentScanner.scanDocument({
+          responseType: ResponseType.Base64,
+          letUserAdjustCrop: true,
+          maxNumDocuments: 1
+        });
+        if (result.scannedImages && result.scannedImages.length > 0) {
+          base64String = result.scannedImages[0];
+        }
+      } catch (scanErr) {
+        console.warn('DocumentScanner failed or not available, falling back to standard Camera:', scanErr);
+        const image = await Camera.getPhoto({
+          quality: 85, // higher quality to preserve fine receipt text details
+          width: 1600, // wider resolution for high-accuracy OCR text recognition
+          allowEditing: true, // show native crop tool so user can frame/crop the receipt
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera
+        });
+        base64String = image.base64String || '';
+      }
 
-      this.scannerStep.set('parsing');
-
-      if (!image.base64String) {
+      if (!base64String) {
         throw new Error('Could not retrieve image data');
       }
 
+      this.scannerStep.set('parsing');
+
       // Convert Base64 string to Blob
-      const byteCharacters = atob(image.base64String);
+      const byteCharacters = atob(base64String);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
