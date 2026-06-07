@@ -10,10 +10,13 @@
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/schedule": "^4.0.0",
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
+    "mongoose": "^9.6.3",
     "puppeteer": "^22.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
