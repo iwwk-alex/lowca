@@ -1,12 +1,59 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as Tesseract from 'tesseract.js';
+import axios from 'axios';
 
 @Injectable()
 export class OcrService {
   private readonly logger = new Logger(OcrService.name);
 
   /**
-   * Recognizes text from a receipt image buffer or URL
+   * Recognizes and parses receipt image directly using Gemini API (if key is set) or Tesseract fallback
+   */
+  async recognizeAndParse(imageBuffer: Buffer): Promise<any> {
+    if (process.env.GEMINI_API_KEY) {
+      this.logger.log('Using Gemini API for receipt OCR and parsing...');
+      try {
+        const base64Image = imageBuffer.toString('base64');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        
+        const payload = {
+          contents: [{
+            parts: [
+              {
+                text: "Analyze this Polish receipt image. Extract the structured data. Respond ONLY with a valid JSON object. Do not wrap in markdown code blocks. Here is the JSON schema: { store: string, nip: string, date: string (YYYY-MM-DD), items: [{ name: string (clean, recognizable product name without price noise), quantity: number, unitPrice: number, discount: number (positive float), finalPrice: number }], total: number, totalDiscounts: number }."
+              },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: base64Image
+                }
+              }
+            ]
+          }]
+        };
+
+        const response = await axios.post(url, payload, { timeout: 15000 });
+        const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (text) {
+          // Clean markdown backticks if any
+          const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleanJson);
+          this.logger.log('Successfully parsed receipt using Gemini API');
+          return parsed;
+        }
+      } catch (err: any) {
+        this.logger.error(`Gemini API OCR failed: ${err.message}. Falling back to Tesseract.`);
+      }
+    }
+
+    this.logger.log('Falling back to local Tesseract OCR...');
+    const recognizedText = await this.recognizeText(imageBuffer);
+    return this.parseReceiptText(recognizedText);
+  }
+
+  /**
+   * Recognizes text from a receipt image buffer or URL (Tesseract local fallback)
    */
   async recognizeText(imageBuffer: Buffer): Promise<string> {
     this.logger.log('Starting OCR recognition...');

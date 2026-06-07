@@ -58,8 +58,7 @@ export class ReceiptsController {
     if (!file) {
       throw new BadRequestException('No receipt image file uploaded');
     }
-    const recognizedText = await this.ocrService.recognizeText(file.buffer);
-    const parsedData = this.ocrService.parseReceiptText(recognizedText);
+    const parsedData = await this.ocrService.recognizeAndParse(file.buffer);
     return parsedData;
   }
 
