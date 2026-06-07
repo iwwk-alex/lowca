@@ -28,7 +28,7 @@ export class ScrapersService implements OnModuleInit {
       try {
         const fileContent = fs.readFileSync(this.filePath, 'utf-8');
         const data = JSON.parse(fileContent);
-        if (data.length < 50) {
+        if (data.length < 300) {
           this.logger.log('Scraped data has too few items. Re-running scraping...');
           await this.handleDailyScraping();
         } else {
@@ -111,8 +111,8 @@ export class ScrapersService implements OnModuleInit {
       const $ = cheerio.load(response.data);
       
       $('.product').each((i, el) => {
-        // Limit to 40 products per store to keep it compact but representative
-        if (items.length >= 40) return;
+        // Limit to 250 products per store to get a wide variety of promotions
+        if (items.length >= 250) return;
         
         const name = $(el).find('.product__name').text().trim();
         const priceStr = $(el).find('.product__price').text().trim();
