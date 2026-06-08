@@ -305,6 +305,40 @@ interface PantryItem {
             </div>
           }
 
+          <!-- STEP 1.5: Photo Preview before upload -->
+          @if (scannerStep() === 'preview') {
+            <div class="preview-container" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+              <div class="scanner-header" style="text-align: center;">
+                <h3 style="color: #fff; margin: 0; font-size: 16px;">{{ ts.currentLang() === 'pl' ? 'Podgląd zdjęcia' : 'Проверка снимка' }}</h3>
+                <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 12px;">
+                  {{ ts.currentLang() === 'pl' ? 'Upewnij się, że tekst jest ostry i czytelny' : 'Убедитесь, что текст четкий и читаемый' }}
+                </p>
+              </div>
+              
+              <div class="image-preview-wrap" style="width: 100%; height: 320px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                @if (capturedImage()) {
+                  <img [src]="'data:image/jpeg;base64,' + capturedImage()" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                } @else {
+                  <div style="color: var(--text-secondary); font-size: 13px;">{{ ts.currentLang() === 'pl' ? 'Demo zdjęcie чека' : 'Демо-режим снимка' }}</div>
+                }
+              </div>
+              
+              <div class="preview-actions" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <button class="accept-btn" (click)="uploadAndParse()">
+                  {{ ts.currentLang() === 'pl' ? 'Wyślij do przetworzenia' : 'Распознать чек' }}
+                </button>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <button class="cancel-btn" (click)="startParsing()" style="flex: 1; margin: 0; padding: 10px;">
+                    {{ ts.currentLang() === 'pl' ? 'Powtórz' : 'Переснять' }}
+                  </button>
+                  <button class="cancel-btn" (click)="closeScanner()" style="flex: 1; margin: 0; padding: 10px; border-color: rgba(239, 68, 68, 0.3); color: #f87171;">
+                    {{ ts.currentLang() === 'pl' ? 'Anuluj' : 'Отмена' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- STEP 2: OCR Parsing Spinner -->
           @if (scannerStep() === 'parsing') {
             <div class="parsing-container">
@@ -1075,7 +1109,8 @@ export class ShoppingListComponent {
 
   // Scanner signals
   scannerOpen = signal<boolean>(false);
-  scannerStep = signal<'camera' | 'parsing' | 'review'>('camera');
+  scannerStep = signal<'camera' | 'preview' | 'parsing' | 'review'>('camera');
+  capturedImage = signal<string>('');
   
   scannedReceiptItems = signal<ScannedItem[]>([
     { name: 'PoduszkiNugVit350g', quantity: 1, unitPrice: 7.49, discount: 0, finalPrice: 7.49 },
@@ -1194,42 +1229,8 @@ export class ShoppingListComponent {
         throw new Error('Could not retrieve image data');
       }
 
-      this.scannerStep.set('parsing');
-
-      // Convert Base64 string to Blob
-      const byteCharacters = atob(base64String);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-      // Build Multipart form data to upload image to our NestJS OCR endpoint
-      const formData = new FormData();
-      formData.append('file', blob, 'receipt.jpg');
-
-      this.http.post<any>(`${API_CONFIG.baseUrl}/receipts/scan`, formData).subscribe({
-        next: (result) => {
-          // Map results from backend OCR parser
-          const mappedItems: ScannedItem[] = (result.items || []).map((item: any) => ({
-            name: item.name,
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || item.finalPrice || 0,
-            discount: item.discount || 0,
-            finalPrice: item.finalPrice || 0
-          }));
-
-          this.scannedReceiptItems.set(mappedItems);
-          this.scannerStep.set('review');
-          this.showToast('Чек успешно отсканирован и распознан!', 'success');
-        },
-        error: (err) => {
-          console.error('OCR API Upload failed:', err);
-          this.showToast('Не удалось загрузить или обработать чек', 'error');
-          this.scannerStep.set('camera');
-        }
-      });
+      this.capturedImage.set(base64String);
+      this.scannerStep.set('preview');
 
     } catch (err: any) {
       console.warn('Camera capture canceled or failed:', err.message || err);
@@ -1245,7 +1246,17 @@ export class ShoppingListComponent {
 
       // Fallback: If camera is not available (e.g. running on simulator without camera or web browser), 
       // simulate OCR parsing so user isn't stuck.
-      this.scannerStep.set('parsing');
+      this.scannerStep.set('preview');
+      this.capturedImage.set('');
+    }
+  }
+
+  uploadAndParse() {
+    const base64String = this.capturedImage();
+    this.scannerStep.set('parsing');
+
+    if (!base64String) {
+      // Demo mode fallback
       setTimeout(() => {
         this.scannedReceiptItems.set([
           { name: 'PoduszkiNugVit350g', quantity: 1, unitPrice: 7.49, discount: 0, finalPrice: 7.49 },
@@ -1256,8 +1267,45 @@ export class ShoppingListComponent {
         this.scannerStep.set('review');
         this.showToast('Чек отсканирован в демо-режиме', 'success');
       }, 1500);
+      return;
     }
+
+    // Convert Base64 string to Blob
+    const byteCharacters = atob(base64String);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+    // Build Multipart form data to upload image to our NestJS OCR endpoint
+    const formData = new FormData();
+    formData.append('file', blob, 'receipt.jpg');
+
+    this.http.post<any>(`${API_CONFIG.baseUrl}/receipts/scan`, formData).subscribe({
+      next: (result) => {
+        // Map results from backend OCR parser
+        const mappedItems: ScannedItem[] = (result.items || []).map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || item.finalPrice || 0,
+          discount: item.discount || 0,
+          finalPrice: item.finalPrice || 0
+        }));
+
+        this.scannedReceiptItems.set(mappedItems);
+        this.scannerStep.set('review');
+        this.showToast('Чек успешно отсканирован и распознан!', 'success');
+      },
+      error: (err) => {
+        console.error('OCR API Upload failed:', err);
+        this.showToast('Не удалось загрузить или обработать чек', 'error');
+        this.scannerStep.set('preview');
+      }
+    });
   }
+
 
   saveReceiptToHistory() {
     const todayStr = new Date().toISOString().split('T')[0];
