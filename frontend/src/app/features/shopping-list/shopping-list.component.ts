@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { DocumentScanner, ResponseType } from '@capgo/capacitor-document-scanner';
+import { Capacitor } from '@capacitor/core';
 import { TranslationService } from '../../services/translation.service';
 import { API_CONFIG } from '../../core/config/api.config';
 
@@ -299,7 +300,7 @@ interface PantryItem {
                 <div class="camera-guideline">{{ ts.t('scanner.align') }}</div>
               </div>
               
-              <button class="capture-btn" (click)="startParsing()">
+              <button class="capture-btn" (click)="retakePhoto()">
                 {{ ts.t('scanner.photo') }}
               </button>
             </div>
@@ -316,8 +317,8 @@ interface PantryItem {
               </div>
               
               <div class="image-preview-wrap" style="width: 100%; height: 320px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); background: #0f172a; display: flex; align-items: center; justify-content: center;">
-                @if (capturedImage()) {
-                  <img [src]="'data:image/jpeg;base64,' + capturedImage()" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                @if (capturedImageUrl()) {
+                  <img [src]="capturedImageUrl()" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
                 } @else {
                   <div style="color: var(--text-secondary); font-size: 13px;">{{ ts.currentLang() === 'pl' ? 'Demo zdjęcie чека' : 'Демо-режим снимка' }}</div>
                 }
@@ -328,7 +329,7 @@ interface PantryItem {
                   {{ ts.currentLang() === 'pl' ? 'Wyślij do przetworzenia' : 'Распознать чек' }}
                 </button>
                 <div style="display: flex; gap: 8px; width: 100%;">
-                  <button class="cancel-btn" (click)="startParsing()" style="flex: 1; margin: 0; padding: 10px;">
+                  <button class="cancel-btn" (click)="retakePhoto()" style="flex: 1; margin: 0; padding: 10px;">
                     {{ ts.currentLang() === 'pl' ? 'Powtórz' : 'Переснять' }}
                   </button>
                   <button class="cancel-btn" (click)="closeScanner()" style="flex: 1; margin: 0; padding: 10px; border-color: rgba(239, 68, 68, 0.3); color: #f87171;">
@@ -1110,7 +1111,8 @@ export class ShoppingListComponent {
   // Scanner signals
   scannerOpen = signal<boolean>(false);
   scannerStep = signal<'camera' | 'preview' | 'parsing' | 'review'>('camera');
-  capturedImage = signal<string>('');
+  capturedImagePath = signal<string>('');
+  capturedImageUrl = signal<string>('');
   
   scannedReceiptItems = signal<ScannedItem[]>([
     { name: 'PoduszkiNugVit350g', quantity: 1, unitPrice: 7.49, discount: 0, finalPrice: 7.49 },
@@ -1191,71 +1193,96 @@ export class ShoppingListComponent {
   async openScanner() {
     this.scannerOpen.set(true);
     this.scannerStep.set('camera');
-    await this.startParsing();
+    this.capturedImagePath.set('');
+    this.capturedImageUrl.set('');
+    // Small delay to let the modal render before launching native camera
+    await new Promise(r => setTimeout(r, 100));
+    await this.capturePhoto();
   }
 
   closeScanner() {
     if (this.scannerStep() === 'parsing') {
       return; // Prevent closing while parsing/uploading
     }
+    this.capturedImagePath.set('');
+    this.capturedImageUrl.set(''); // Free memory
     this.scannerOpen.set(false);
   }
 
-  async startParsing() {
+  async retakePhoto() {
+    // Free previous image from memory before launching camera again
+    this.capturedImagePath.set('');
+    this.capturedImageUrl.set('');
+    this.scannerStep.set('camera');
+    // Wait a tick for iOS to dismiss any previous native controller
+    await new Promise(r => setTimeout(r, 300));
+    await this.capturePhoto();
+  }
+
+  private async capturePhoto() {
     try {
-      let base64String = '';
+      let rawPath = '';
+      let safeUrl = '';
       try {
         const result = await DocumentScanner.scanDocument({
-          responseType: ResponseType.Base64,
+          responseType: ResponseType.ImageFilePath, // Use file paths to save memory!
           letUserAdjustCrop: true,
           maxNumDocuments: 1
         });
         if (result.scannedImages && result.scannedImages.length > 0) {
-          base64String = result.scannedImages[0];
+          rawPath = result.scannedImages[0];
+          safeUrl = Capacitor.convertFileSrc(rawPath);
         }
       } catch (scanErr) {
         console.warn('DocumentScanner failed or not available, falling back to standard Camera:', scanErr);
         const image = await Camera.getPhoto({
-          quality: 85, // higher quality to preserve fine receipt text details
-          width: 1600, // wider resolution for high-accuracy OCR text recognition
-          allowEditing: true, // show native crop tool so user can frame/crop the receipt
-          resultType: CameraResultType.Base64,
+          quality: 85,
+          width: 1600,
+          allowEditing: true,
+          resultType: CameraResultType.Uri, // Use Uri to save memory!
           source: CameraSource.Camera
         });
-        base64String = image.base64String || '';
+        rawPath = image.path || '';
+        safeUrl = image.webPath || (rawPath ? Capacitor.convertFileSrc(rawPath) : '');
       }
 
-      if (!base64String) {
-        throw new Error('Could not retrieve image data');
+      if (!rawPath) {
+        throw new Error('Could not retrieve image path');
       }
 
-      this.capturedImage.set(base64String);
+      this.capturedImagePath.set(rawPath);
+      this.capturedImageUrl.set(safeUrl);
       this.scannerStep.set('preview');
 
     } catch (err: any) {
       console.warn('Camera capture canceled or failed:', err.message || err);
       const errMsg = err.message || JSON.stringify(err) || 'Unknown error';
       
-      // If user cancelled, just close scanner
+      // If user cancelled, go back to preview if we had an image, otherwise close
       if (errMsg.includes('cancelled') || errMsg.includes('canceled') || errMsg.includes('User cancelled')) {
-        this.closeScanner();
+        if (this.capturedImageUrl()) {
+          this.scannerStep.set('preview');
+        } else {
+          this.scannerOpen.set(false);
+        }
         return;
       }
       
       this.showToast('Ошибка запуска камеры: ' + errMsg, 'error');
 
-      // Fallback: If camera is not available (e.g. running on simulator without camera or web browser), 
-      // simulate OCR parsing so user isn't stuck.
+      // Fallback: demo mode
       this.scannerStep.set('preview');
-      this.capturedImage.set('');
+      this.capturedImagePath.set('');
+      this.capturedImageUrl.set('');
     }
   }
 
-  uploadAndParse() {
-    const base64String = this.capturedImage();
+  async uploadAndParse() {
+    const rawPath = this.capturedImagePath();
+    const safeUrl = this.capturedImageUrl();
     this.scannerStep.set('parsing');
 
-    if (!base64String) {
+    if (!rawPath || !safeUrl) {
       // Demo mode fallback
       setTimeout(() => {
         this.scannedReceiptItems.set([
@@ -1270,40 +1297,41 @@ export class ShoppingListComponent {
       return;
     }
 
-    // Convert Base64 string to Blob
-    const byteCharacters = atob(base64String);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    try {
+      // Fetch file content as blob directly via native webview handling
+      const response = await fetch(safeUrl);
+      const blob = await response.blob();
+
+      // Build Multipart form data to upload image to our NestJS OCR endpoint
+      const formData = new FormData();
+      formData.append('file', blob, 'receipt.jpg');
+
+      this.http.post<any>(`${API_CONFIG.baseUrl}/receipts/scan`, formData).subscribe({
+        next: (result) => {
+          // Map results from backend OCR parser
+          const mappedItems: ScannedItem[] = (result.items || []).map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || item.finalPrice || 0,
+            discount: item.discount || 0,
+            finalPrice: item.finalPrice || 0
+          }));
+
+          this.scannedReceiptItems.set(mappedItems);
+          this.scannerStep.set('review');
+          this.showToast('Чек успешно отсканирован и распознан!', 'success');
+        },
+        error: (err) => {
+          console.error('OCR API Upload failed:', err);
+          this.showToast('Не удалось загрузить или обработать чек', 'error');
+          this.scannerStep.set('preview');
+        }
+      });
+    } catch (fetchErr: any) {
+      console.error('Failed to read image file:', fetchErr);
+      this.showToast('Не удалось прочитать файл изображения: ' + (fetchErr.message || fetchErr), 'error');
+      this.scannerStep.set('preview');
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-    // Build Multipart form data to upload image to our NestJS OCR endpoint
-    const formData = new FormData();
-    formData.append('file', blob, 'receipt.jpg');
-
-    this.http.post<any>(`${API_CONFIG.baseUrl}/receipts/scan`, formData).subscribe({
-      next: (result) => {
-        // Map results from backend OCR parser
-        const mappedItems: ScannedItem[] = (result.items || []).map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity || 1,
-          unitPrice: item.unitPrice || item.finalPrice || 0,
-          discount: item.discount || 0,
-          finalPrice: item.finalPrice || 0
-        }));
-
-        this.scannedReceiptItems.set(mappedItems);
-        this.scannerStep.set('review');
-        this.showToast('Чек успешно отсканирован и распознан!', 'success');
-      },
-      error: (err) => {
-        console.error('OCR API Upload failed:', err);
-        this.showToast('Не удалось загрузить или обработать чек', 'error');
-        this.scannerStep.set('preview');
-      }
-    });
   }
 
 

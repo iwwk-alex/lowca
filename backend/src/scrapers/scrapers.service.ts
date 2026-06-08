@@ -52,6 +52,7 @@ export class ScrapersService implements OnModuleInit {
         price: item.price,
         originalPrice: item.price * 1.25, // Mock original price for saving calculations
         imgUrl: item.imgUrl,
+        imageUrl: item.imgUrl,
         category: 'Inne',
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // Valid for 1 week
       }));

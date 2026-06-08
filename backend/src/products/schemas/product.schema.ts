@@ -21,10 +21,16 @@ export class Product {
   imageUrl: string;
 
   @Prop({ default: '' })
+  imgUrl: string;
+
+  @Prop({ default: '' })
   barcode: string;
 
   @Prop({ default: null })
   discountPrice: number;
+
+  @Prop({ default: null })
+  originalPrice: number;
 
   @Prop({ default: null })
   validUntil: string;
