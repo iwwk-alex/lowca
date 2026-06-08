@@ -2,7 +2,7 @@ import { Component, signal, computed, ChangeDetectionStrategy, inject, OnInit } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { catchError } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, Subject, switchMap, of, tap } from 'rxjs';
 import { TranslationService } from '../../services/translation.service';
 import { API_CONFIG } from '../../core/config/api.config';
 
@@ -47,10 +47,14 @@ interface GroupedProduct {
         [placeholder]="ts.t('compare.placeholder')" 
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearchChange($event)">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
+      @if (loading()) {
+        <div class="spinner"></div>
+      } @else {
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      }
     </div>
 
     <!-- Comparison Results -->
@@ -163,7 +167,7 @@ interface GroupedProduct {
       border-color: var(--accent-color);
       box-shadow: 0 0 10px rgba(56,189,248,0.15);
     }
-    .search-icon {
+    .search-icon, .spinner {
       position: absolute;
       left: 14px;
       top: 14px;
@@ -172,6 +176,13 @@ interface GroupedProduct {
       color: var(--text-secondary);
       pointer-events: none;
     }
+    .spinner {
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top: 2px solid var(--accent-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     
     .results-container {
       padding-bottom: 80px;
@@ -322,61 +333,36 @@ export class ComparisonComponent implements OnInit {
   public ts = inject(TranslationService);
   
   searchQuery = '';
-  searchQuerySignal = signal<string>('');
+  loading = signal(false);
+  private searchSubject = new Subject<string>();
 
-  items = signal<CompareItem[]>([
-    { id: 'c1', name: 'Masło Pilos Extra 82%', store: 'lidl', price: 3.49, originalPrice: 6.99, unit: '200 g', promo: 'Kup 3' },
-    { id: 'c2', name: 'Masło Mlekovita Polskie', store: 'biedronka', price: 3.99, originalPrice: 5.99, unit: '200 g', promo: 'Supercena' },
-    { id: 'c3', name: 'Masło ekstra Kaufland K-Classic', store: 'kaufland', price: 3.79, originalPrice: 5.49, unit: '200 g', promo: 'Kaufland Card' },
-    
-    { id: 'c4', name: 'Mleko UHT Pilos 3.2%', store: 'lidl', price: 1.99, originalPrice: 3.29, unit: '1 L', promo: 'Kup karton' },
-    { id: 'c5', name: 'Mleko UHT Mleczna Dolina 3.2%', store: 'biedronka', price: 2.19, originalPrice: 3.19, unit: '1 L', promo: 'Biedronka Card' },
-    { id: 'c6', name: 'Mleko UHT K-Classic 3.2%', store: 'kaufland', price: 1.89, originalPrice: 2.99, unit: '1 L', promo: 'Supercena' },
-    
-    { id: 'c7', name: 'Filet z piersi kurczaka', store: 'biedronka', price: 13.99, originalPrice: 23.90, unit: '1 kg', promo: 'Karta MB' },
-    { id: 'c8', name: 'Świeży filet z piersi kurczaka', store: 'lidl', price: 14.99, originalPrice: 24.90, unit: '1 kg', promo: 'Lidl Plus' },
-    { id: 'c9', name: 'Filet z piersi kurczaka K-Pur', store: 'kaufland', price: 13.49, originalPrice: 22.90, unit: '1 kg', promo: 'Supercena' }
-  ]);
+  items = signal<CompareItem[]>([]);
 
   ngOnInit() {
-    this.http.get<any[]>(`${API_CONFIG.baseUrl}/products`).pipe(
-      catchError(err => {
-        console.warn('Backend API down inside ComparisonComponent, using static public scraped-data.json fallback.', err);
-        return this.http.get<any[]>('/scraped-data.json');
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      tap(() => this.loading.set(true)),
+      switchMap(query => {
+        if (!query) return of([]);
+        return this.http.get<any[]>(`${API_CONFIG.baseUrl}/products/search?q=${encodeURIComponent(query)}`).pipe(
+          catchError(() => of([]))
+        );
       })
-    ).subscribe({
-      next: (data: any[]) => {
-        if (data && data.length > 0) {
-          const mappedItems: CompareItem[] = data.map((item: any, index: number) => ({
-            id: item.id || `scraped-compare-${index}`,
-            name: item.name,
-            store: item.store,
-            price: item.price,
-            originalPrice: item.originalPrice || Math.round(item.price * 1.4 * 100) / 100,
-            imgUrl: item.imgUrl,
-            unit: this.guessUnit(item.name),
-            promo: item.promo || 'Promocja'
-          }));
-          
-          this.items.update(current => {
-            // Filter out default items if they overlap with scraped IDs
-            const filtered = current.filter(c => !mappedItems.some(m => m.id === c.id));
-            return [...filtered, ...mappedItems];
-          });
-        }
-      },
-      error: (err: any) => {
-        console.warn('Failed to load scraped data inside ComparisonComponent.', err);
-      }
+    ).subscribe(data => {
+      const mapped = data.map((item: any, i: number) => ({
+        id: item.id || `s-${i}`,
+        name: item.name,
+        store: item.store,
+        price: item.price,
+        originalPrice: item.originalPrice || item.price * 1.2,
+        imgUrl: item.imgUrl,
+        unit: item.unit || '1 szt.',
+        promo: item.promo || ''
+      }));
+      this.items.set(mapped);
+      this.loading.set(false);
     });
-  }
-
-  guessUnit(name: string): string {
-    const n = name.toLowerCase();
-    if (n.includes('kg') || n.includes('piersi') || n.includes('kurczak')) return '1 kg';
-    if (n.includes('szt') || n.includes('nożyczki') || n.includes('legowisko') || n.includes('klapki') || n.includes('siekacz') || n.includes('jednostka')) return '1 szt.';
-    if (n.includes('ml') || n.includes('butelka') || n.includes('wódka') || n.includes('piwo')) return '500 ml';
-    return '1 szt.';
   }
 
   normalizeName(name: string): string {
@@ -384,82 +370,30 @@ export class ComparisonComponent implements OnInit {
     if (n.includes('masło')) return 'Masło Ekstra 82%';
     if (n.includes('mleko')) return 'Mleko UHT 3.2%';
     if (n.includes('piersi') || n.includes('kurczak')) return 'Filet z piersi kurczaka';
-    if (n.includes('kawa')) return 'Kawa ziarnista';
-    if (n.includes('kapsułki') || n.includes('ariel')) return 'Kapsułki do prania';
-    if (n.includes('nożyczki') || n.includes('siekacz') || n.includes('szczypce') || n.includes('przybory')) return 'Przybory Kuchenne';
-    if (n.includes('klapki') || n.includes('buty') || n.includes('t-shirt') || n.includes('koszulka')) return 'Odzież i obuwie';
-    if (n.includes('legowisko') || n.includes('karma') || n.includes('psa') || n.includes('kota')) return 'Artykuły dla zwierząt';
-    if (n.includes('wódka') || n.includes('whisky') || n.includes('piwo') || n.includes('wino')) return 'Napoje alkoholowe';
-    if (n.includes('parkside') || n.includes('narzedzia') || n.includes('śrubokręt') || n.includes('wiertarka')) return 'Narzędzia warsztatowe';
-    
-    // Fallback: capitalize first 3 words
-    const words = name.split(/\s+/).slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    return words;
+    return name.split(/\s+/).slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   }
 
   groupedProducts = computed(() => {
-    const q = this.searchQuerySignal().toLowerCase().trim();
-    
-    // Filter items
-    let filtered = this.items();
-    if (q) {
-      filtered = filtered.filter(item => 
-        item.name.toLowerCase().includes(q)
-      );
-    }
-    
-    // Group items by normalized concept
-    const groupsMap = new Map<string, CompareItem[]>();
-    filtered.forEach(item => {
-      const normalized = this.normalizeName(item.name);
-      if (!groupsMap.has(normalized)) {
-        groupsMap.set(normalized, []);
-      }
-      groupsMap.get(normalized)!.push(item);
+    const groups = new Map<string, GroupedProduct>();
+    this.items().forEach(item => {
+      const norm = this.normalizeName(item.name);
+      if (!groups.has(norm)) groups.set(norm, { name: norm, prices: {} });
+      const group = groups.get(norm)!;
+      group.imgUrl = group.imgUrl || item.imgUrl;
+      group.prices[item.store] = { price: item.price, originalPrice: item.originalPrice || item.price, promoText: item.promo, item };
     });
-    
-    const result: GroupedProduct[] = [];
-    groupsMap.forEach((items, name) => {
-      // Find image if available
-      const itemWithImg = items.find(it => it.imgUrl);
-      const imgUrl = itemWithImg ? itemWithImg.imgUrl : undefined;
-      
-      const prices: GroupedProduct['prices'] = {};
-      items.forEach(item => {
-        const originalPrice = item.originalPrice || Math.round(item.price * 1.35 * 100) / 100;
-        prices[item.store] = {
-          price: item.price,
-          originalPrice,
-          promoText: item.promo,
-          item
-        };
-      });
-      
-      result.push({
-        name,
-        imgUrl,
-        prices
-      });
-    });
-    
-    return result;
+    return Array.from(groups.values());
   });
 
   onSearchChange(val: string) {
-    this.searchQuerySignal.set(val);
+    this.searchSubject.next(val);
   }
 
   addToList(item: CompareItem) {
-    const currentList = JSON.parse(localStorage.getItem('shopping_list') || '[]');
-    // Avoid duplicates
-    if (!currentList.some((it: any) => it.name === item.name && it.store === item.store)) {
-      currentList.push({
-        id: Math.random().toString(),
-        name: item.name,
-        store: item.store,
-        price: item.price
-      });
-      localStorage.setItem('shopping_list', JSON.stringify(currentList));
+    const list = JSON.parse(localStorage.getItem('shopping_list') || '[]');
+    if (!list.some((it: any) => it.name === item.name && it.store === item.store)) {
+      list.push({ id: Math.random().toString(), name: item.name, store: item.store, price: item.price });
+      localStorage.setItem('shopping_list', JSON.stringify(list));
     }
   }
 }

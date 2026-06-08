@@ -33,13 +33,16 @@ export class ProductsService {
       this.logger.log(`No database results for "${query}". Fetching real-time AI price estimates...`);
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
-        const prompt = `You are a Polish grocery price comparison assistant. Estimate the current regular prices for the product "${query}" in Poland at Biedronka, Lidl, and Kaufland. Respond ONLY with a valid JSON array of objects. Do not wrap in markdown code blocks. JSON schema: [{"name": "Short name in Polish", "store": "biedronka"|"lidl"|"kaufland", "price": number, "originalPrice": number, "imgUrl": string, "category": "Inne"}]`;
+        const prompt = `You are a Polish grocery price comparison assistant. Estimate the current regular prices for the product "${query}" in Poland at Biedronka, Lidl, and Kaufland. Return exactly 3 objects, one per store. JSON schema: [{"name": "Short product name in Polish", "store": "biedronka"|"lidl"|"kaufland", "price": number, "originalPrice": number, "imgUrl": "", "category": "Inne"}]`;
 
         const payload = {
-          contents: [{ parts: [{ text: prompt }] }]
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
         };
 
-        const response = await axios.post(url, payload, { timeout: 8000 });
+        const response = await axios.post(url, payload, { timeout: 20000 });
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
         
         if (text) {
